@@ -252,6 +252,8 @@ def get_sticker(text, num=40):
         join = (' LEFT JOIN tags ON tags.sticker = stickers.file_id'
                 ' LEFT JOIN tag_index t ON t.tag = tags.tag')
         vals.extend(normalize_tag(t) for t in tags)
+    if not where:
+        return []
     sql = 'SELECT file_id, emoji FROM stickers%s WHERE %s LIMIT ?' % (join, where)
     vals.append(num)
     cur = DB.cursor()
