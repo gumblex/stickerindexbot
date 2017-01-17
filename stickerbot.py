@@ -38,7 +38,16 @@ re_qtag = re.compile(r"#?\w+", re.UNICODE)
 re_tag = re.compile(r"#\w+", re.UNICODE)
 re_tags = re.compile(r"#\w+(?:\s+#\w+)*", re.UNICODE)
 
-Sticker = collections.namedtuple('Sticker', 'file_id width height emoji file_size')
+class Sticker(collections.namedtuple('Sticker', 'file_id width height emoji file_size')):
+    @classmethod
+    def from_telegram(cls, sticker):
+        return cls(
+            sticker['file_id'],
+            sticker['width'],
+            sticker['height'],
+            sticker.get('emoji'),
+            sticker.get('file_size')
+        )
 
 class AttrDict(dict):
 
@@ -229,7 +238,7 @@ def vacuum_db():
     DB.commit()
     DB.vacuum()
 
-def get_sticker(text, num=40):
+def get_sticker(text, num=50):
     text = text.strip()
     if not text:
         return []
@@ -329,7 +338,7 @@ def on_text(text, chat, replyid, msg):
             return 'Please send me a sticker and its tag(s).'
     if 'reply_to_message' in msg and 'sticker' in msg['reply_to_message']:
         tags = [x.lstrip('#') for x in text.strip().split()]
-        add_sticker(msg['reply_to_message']['sticker']['file_id'], tags)
+        add_sticker(Sticker.from_telegram(msg['reply_to_message']['sticker']['file_id']), tags)
         if chat['type'] == 'private':
             return 'Tags added.'
     elif chat['type'] == 'private':
@@ -341,14 +350,8 @@ def on_text(text, chat, replyid, msg):
             return 'Tags added.'
 
 def on_sticker(sticker, chat, msg):
-    sticker_obj = Sticker(
-        sticker['file_id'],
-        sticker['width'],
-        sticker['height'],
-        sticker.get('emoji'),
-        sticker.get('file_size')
-    )
-    add_sticker(sticker)
+    sticker_obj = Sticker.from_telegram(sticker)
+    add_sticker(sticker_obj)
     if chat['type'] == 'private':
         STATE[str(chat['id'])] = sticker_obj.file_id
 
