@@ -59,7 +59,7 @@ class SQLiteStateStore(collections.UserDict):
     def commit(self):
         cur = self.conn.cursor()
         for k, v in self.data.items():
-            cur.execute('REPLACE INTO %s (key, value) VALUES (?,?)' % TABLE,
+            cur.execute('REPLACE INTO %s (key, value) VALUES (?,?)' % self.TABLE,
                         (k, json.dumps(v)))
         self.conn.commit()
 
@@ -229,7 +229,7 @@ def vacuum_db():
     DB.commit()
     DB.vacuum()
 
-def get_sticker(text, num=20):
+def get_sticker(text, num=40):
     text = text.strip()
     if not text:
         return []
@@ -283,6 +283,7 @@ def handle_api_update(d: dict):
             text = query['query'].strip()
             if text:
                 stickers = get_sticker(text)
+                logging.info('Got %d stickers for %s', len(stickers), text)
                 r = answer(query['id'], inline_result(stickers))
                 logger_botapi.debug(r)
         elif 'message' in d:
@@ -327,6 +328,8 @@ def on_text(text, chat, replyid, msg):
     if 'reply_to_message' in msg and 'sticker' in msg['reply_to_message']:
         tags = [x.lstrip('#') for x in text.strip().split()]
         add_sticker(msg['reply_to_message']['sticker']['file_id'], tags)
+        if chat['type'] == 'private':
+            return 'Tags added.'
     elif chat['type'] == 'private':
         sticker = STATE.get(str(chat['id']))
         if sticker:
@@ -358,7 +361,7 @@ if __name__ == '__main__':
         apithr = threading.Thread(target=getupdates)
         apithr.daemon = True
         apithr.start()
-
+        logging.info('Satellite launched')
         while 1:
             handle_api_update(MSG_Q.get())
     finally:
