@@ -342,14 +342,14 @@ def on_text(text, chat, replyid, msg):
             if match:
                 tags = [x.lstrip('#') for x in match.group(0).split()]
         else:
-            tags = [x.lstrip('#') for x in text.strip().split()]
+            tags = [x.lstrip('#') for x in text.strip().split() if re_qtag.match(x)]
         add_sticker(Sticker.from_telegram(msg['reply_to_message']['sticker']), tags)
         if chat['type'] == 'private':
             return 'Tags added.'
     elif chat['type'] == 'private':
         sticker = STATE.get(str(chat['id']))
         if sticker:
-            tags = [x.lstrip('#') for x in text.strip().split()]
+            tags = [x.lstrip('#') for x in text.strip().split() if re_qtag.match(x)]
             add_sticker(sticker, tags)
             STATE[str(chat['id'])] = None
             return 'Tags added.'
