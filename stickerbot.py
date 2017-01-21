@@ -337,7 +337,12 @@ def on_text(text, chat, replyid, msg):
         if chat['type'] == 'private':
             return 'Please send me a sticker and its tag(s).'
     if 'reply_to_message' in msg and 'sticker' in msg['reply_to_message']:
-        tags = [x.lstrip('#') for x in text.strip().split()]
+        if chat['type'] != 'private':
+            match = re_tags.match(text.strip())
+            if match:
+                tags = [x.lstrip('#') for x in match.group(0).split()]
+        else:
+            tags = [x.lstrip('#') for x in text.strip().split()]
         add_sticker(Sticker.from_telegram(msg['reply_to_message']['sticker']), tags)
         if chat['type'] == 'private':
             return 'Tags added.'
