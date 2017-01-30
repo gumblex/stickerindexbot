@@ -102,6 +102,8 @@ def bot_api(method, **params):
             req = HSession.post(('https://api.telegram.org/bot%s/' %
                                 CFG.apitoken) + method, data=params, timeout=45)
             retjson = req.content
+            if not retjson:
+                continue
             ret = json.loads(retjson.decode('utf-8'))
             break
         except Exception as ex:
@@ -337,6 +339,7 @@ def on_text(text, chat, replyid, msg):
         if chat['type'] == 'private':
             return 'Please send me a sticker and its tag(s).'
     if 'reply_to_message' in msg and 'sticker' in msg['reply_to_message']:
+        tags = []
         if chat['type'] != 'private':
             match = re_tags.match(text.strip())
             if match:
